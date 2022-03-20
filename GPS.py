@@ -3,11 +3,12 @@ import time
 import smbus
 import signal
 import sys
- 
+from datetime import datetime
+
 BUS = None
 address = 0x42
-gpsReadInterval = 0.03
- 
+gpsReadInterval = 0.003
+
 def connectBus():
     global BUS
     BUS = smbus.SMBus(1)
@@ -32,10 +33,15 @@ def parseResponse(gpsLine):
                 for ch in gpsStr[1:]: # Remove the $ and do a manual checksum on the rest of the NMEA sentence
                      chkVal ^= ord(ch)
                 if (chkVal == int(chkSum, 16)): # Compare the calculated checksum with the one in the NMEA sentence
-                     print gpsChars
-                     file1 = open("GPS_data.txt", "a")
-                     file1.write(gpsChars)
-                     file1.close()
+                     #print ("GPS Starts")
+                     curr_time = datetime.now()
+                     formatted_time = curr_time.strftime('%Y.%m.%d.%H.%M.%S.%f')
+                     if (gpsChars.startswith('$GNGGA') or gpsChars.startswith('$GNGLL') or gpsChars.startswith('$GNVTG')):
+                         
+                         file1 = open("GPS_data.txt", "a")
+                         #file1.write(formatted_time)
+                         file1.write(gpsChars)
+                         file1.close()
  
 def handle_ctrl_c(signal, frame):
         sys.exit(130)
@@ -61,11 +67,14 @@ def readGPS():
  
     except IOError:
         connectBus()
-    except Exception,e:
+    except Exception,ppytoe:
         print e
  
 connectBus()
- 
+count = 0
 while True:
+    count += 1
+    if count == 1:
+        print("GPS start")
     readGPS()
     time.sleep(gpsReadInterval)
